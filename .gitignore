@@ -1,0 +1,4 @@
+rsync_jobs.conf
+*.log
+.env
+.env.*
