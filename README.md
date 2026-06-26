@@ -1,6 +1,6 @@
 # rsync-pull-from-remote
 
-从远端服务器通过 SSH + rsync 拉取目录到本机的 Bash 脚本。
+通过 SSH + rsync 在本机和远端服务器之间同步文件/目录的 Bash 脚本。
 
 ## 依赖
 
@@ -13,25 +13,34 @@ sudo apt install sshpass
 ## 快速开始
 
 ```bash
-chmod +x rsync_pull_from_remote.sh
+chmod +x rsync_pull_from_remote.sh rsync_push_to_remote.sh
 
-# 密钥登录（默认）
+# 拉取：密钥登录（默认）
 ./rsync_pull_from_remote.sh -p 22 user@remote.host:/remote/path/ /local/dest/
 
-# 自定义 SSH 端口
+# 拉取：自定义 SSH 端口
 ./rsync_pull_from_remote.sh -p 42994 root@connect.example.com:/data/project/ /home/ubuntu/project/
+
+# 推送：上传单个文件
+./rsync_push_to_remote.sh -p 42994 ./model.pt root@connect.example.com:/remote/path/model.pt
+
+# 推送：上传目录内容
+./rsync_push_to_remote.sh -p 42994 ./local_dir/ root@connect.example.com:/remote/dir/
 
 # 密码登录（交互式）
 ./rsync_pull_from_remote.sh -P -p 42994 root@connect.example.com:/remote/path/ /local/dest/
 
 # 密码登录（非交互，通过环境变量，勿写入脚本或仓库）
 SSHPASS='your_password' ./rsync_pull_from_remote.sh -P -p 42994 root@host:/remote/ /local/
+SSHPASS='your_password' ./rsync_push_to_remote.sh -P -p 42994 ./local/ root@host:/remote/
 
 # 先预览，不实际写入
 ./rsync_pull_from_remote.sh -n -P -p 42994 root@host:/remote/ /local/
 ```
 
 ## CLI 参数
+
+`rsync_pull_from_remote.sh`：
 
 | 参数 | 说明 |
 |------|------|
@@ -44,10 +53,33 @@ SSHPASS='your_password' ./rsync_pull_from_remote.sh -P -p 42994 root@host:/remot
 | `-e, --exclude` | 排除规则，可重复 |
 | `-i, --identity` | SSH 私钥路径 |
 
+`rsync_push_to_remote.sh`：
+
+| 参数 | 说明 |
+|------|------|
+| `<local_src>` | 本地文件或目录 |
+| `<remote_spec>` | 远端路径，格式 `user@host:/path/` |
+| `-p, --port` | SSH 端口，默认 22 |
+| `-P, --password-auth` | 允许密码认证 |
+| `-n, --dry-run` | 仅预览 |
+| `-D, --delete` | 删除远端多余文件（慎用） |
+| `-e, --exclude` | 排除规则，可重复 |
+| `-i, --identity` | SSH 私钥路径 |
+
 ## 路径说明
 
 - `host:/dir/` → 同步 **dir 目录内容** 到本地
 - `host:/dir` → 在本地创建 **dir 子目录**
+- `./dir/ host:/dir/` → 推送 **dir 内容** 到远端目录
+- `./file.pt host:/dir/file.pt` → 推送单个文件并指定远端文件名
+
+## 推送模型权重示例
+
+```bash
+SSHPASS='your_password' ./rsync_push_to_remote.sh -P -p 42994 \
+  ./yolo_plate_best.pt \
+  root@connect.example.com:/root/autodl-tmp/user/code/TLC_Rf/engine/yolo_plate_best.pt
+```
 
 ## 配置文件（可选）
 
